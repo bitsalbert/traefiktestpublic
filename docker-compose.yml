@@ -1,0 +1,30 @@
+version: '3.8'  # Using a newer version for better compatibility
+
+services:
+  traefik:
+    image: traefik:latest  # Always pull the latest for updates
+    container_name: traefik
+    command:
+      - "--api.insecure=true"  # Enable dashboard (insecure for simplicity)
+      - "--providers.docker"  # Enable Docker provider for automatic service discovery
+      - "--entrypoints.grpc.address=:8090"  # Expose gRPC entrypoint
+      - "--log.level=DEBUG"   # Helpful for troubleshooting
+    ports:
+      - "81:80"          # For the dashboard (or other HTTP services)
+      - "8091:8090"      # For gRPC traffic
+      - "8081:8080"      # Traefik dashboard
+      - "50052:50051"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker socket access
+
+  grpc-service:
+    image: bitgestion_service-bitgestiongrpc  # Replace with your actual service image
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grpc-service.rule=Host(`192.168.0.5`)" 
+      - "traefik.http.routers.grpc-service.entrypoints=grpc"
+      - "traefik.http.services.grpc-service.loadbalancer.server.port=50051" # Replace with your service's actual gRPC port
+      - "traefik.http.routers.grpc-service.service=grpc-service"
+      - "traefik.http.services.grpc-service.loadbalancer.server.scheme=h2c"
+      - 'traefik.http.middlewares.grpc-web-middle.grpcWeb.allowOrigins=*'
+      - 'traefik.http.routers.grpc-service.middlewares=grpc-web-middle'

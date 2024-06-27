@@ -4,6 +4,7 @@ services:
   traefik:
     image: traefik:latest  # Always pull the latest for updates
     container_name: traefik
+    restart: always
     command:
       - "--api.insecure=true"  # Enable dashboard (insecure for simplicity)
       - "--providers.docker"  # Enable Docker provider for automatic service discovery
@@ -19,6 +20,7 @@ services:
 
   grpc-service:
     image: bitgestion_service-bitgestiongrpc  # Replace with your actual service image
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grpc-service.rule=Host(`192.168.0.5`)" 
